@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>方剂速记 · 学习统计</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="stats">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">方</div>
+        <div class="brand-text">
+          <h1>方剂速记</h1>
+          <p>72 学时末考 · 艾宾浩斯记忆卡</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="due-pill" id="duePill">今日待复习 <strong>0</strong></div>
+        <button class="owner-btn" id="settingsTopBtn" type="button" title="备份与导入">设置</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="主导航">
+      <a class="tab" href="index.html">复习</a>
+      <a class="tab" href="library.html">卡片库</a>
+      <a class="tab active" href="stats.html">学习统计</a>
+    </nav>
+
+    <main>
+      <section class="view active" id="view-stats">
+        <div class="stat-grid">
+          <div class="stat-card"><span class="stat-label">卡片总数</span><strong id="statTotal">0</strong><small>仅第一份文件的背诵方剂</small></div>
+          <div class="stat-card"><span class="stat-label">今日待复习</span><strong id="statDue">0</strong><small>到复习节点</small></div>
+          <div class="stat-card"><span class="stat-label">记忆中</span><strong id="statLearning">0</strong><small>已进入复习周期</small></div>
+          <div class="stat-card"><span class="stat-label">长期记忆</span><strong id="statMastered">0</strong><small>达到 15 天节点</small></div>
+          <div class="stat-card"><span class="stat-label">今日已复习</span><strong id="statToday">0</strong><small>记得 / 太简单 / 不记得</small></div>
+        </div>
+
+        <div class="panel stats-panel" id="chapterStatsPanel">
+          <div class="panel-head">
+            <h3>各章节方剂学习情况</h3>
+            <button class="text-btn" id="toggleChapterStatsBtn" type="button">全部展开</button>
+          </div>
+          <p class="muted">按章节查看每首方剂的学习阶段，点击章节可展开明细。</p>
+          <div id="chapterStats" class="chapter-stats"></div>
+        </div>
+
+        <div class="panel stats-panel">
+          <h3>按考核要求分布</h3>
+          <div id="levelBars" class="level-bars"></div>
+        </div>
+
+        <div class="panel stats-panel">
+          <h3>最近 7 天复习</h3>
+          <div id="dailyBars" class="daily-bars"></div>
+        </div>
+
+        <div class="panel stats-panel">
+          <h3>艾宾浩斯复习节点</h3>
+          <p class="muted">每次选择「记得」进入下一节点；「忘记」回到起点，5 分钟后重来；「太简单」直接跳两级。</p>
+          <div id="intervalList" class="interval-list"></div>
+        </div>
+
+        <div class="panel danger-zone">
+          <h3>数据管理</h3>
+          <div class="danger-actions">
+            <button class="secondary-btn" id="openSettingsBtn" type="button">备份 / 导入</button>
+            <button class="danger-btn" id="resetProgressBtn" type="button">清空记忆进度</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-backdrop" data-close="settingsModal"></div>
+    <div class="modal-card wide">
+      <h3>备份与导入</h3>
+      <div class="settings-block">
+        <h4>备份卡片与进度</h4>
+        <p class="muted">导出为 JSON 文件，可在其他设备导入恢复。</p>
+        <div class="inline-actions">
+          <button class="secondary-btn" id="exportBtn" type="button">导出备份</button>
+          <label class="file-btn">导入备份<input type="file" id="importInput" accept="application/json,.json"></label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="primary-btn" type="button" data-close="settingsModal">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="seed.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

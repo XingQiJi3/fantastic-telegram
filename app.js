@@ -4,6 +4,7 @@
   var STORAGE_KEY = "fangji_anki_v1";
   var SEED_VERSION = 2;
   var DAY = 24 * 60 * 60 * 1000;
+  var PAGE = document.body.getAttribute("data-page") || "review";
 
   // 艾宾浩斯复习节点：5 分钟 → 30 分钟 → 12 小时 → 1 天 → 2 天 → 4 天 → 7 天 → 15 天 → 30 天 → 60 天
   var INTERVALS = [
@@ -23,6 +24,10 @@
 
   // ---------- 工具 ----------
   function $(id) { return document.getElementById(id); }
+  function on(id, evt, fn) { var el = $(id); if (el) el.addEventListener(evt, fn); }
+  function onAll(sel, evt, fn) {
+    document.querySelectorAll(sel).forEach(function (el) { el.addEventListener(evt, fn); });
+  }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -137,31 +142,17 @@
     var due = dueCount();
     var today = ensureStats();
     var mastered = state.cards.filter(function (c) { return c.stage >= 8; }).length;
-    $("duePill").innerHTML = "今日待复习 <strong>" + due + "</strong>";
-    $("statDue").textContent = due;
-    $("statToday").textContent = today.reviewed;
-    $("reviewStats").innerHTML =
-      "<span>今日已复习 <b>" + today.reviewed + "</b></span>" +
-      "<span>待复习 <b>" + due + "</b></span>" +
-      "<span>长期记忆 <b>" + mastered + "</b></span>";
-  }
-
-  function showView(name) {
-    document.querySelectorAll(".tab").forEach(function (t) {
-      t.classList.toggle("active", t.dataset.view === name);
-    });
-    document.querySelectorAll(".view").forEach(function (v) {
-      v.classList.toggle("active", v.id === "view-" + name);
-    });
-    if (name === "library") renderLibrary();
-    if (name === "stats") {
-      renderStats();
-      var panel = $("chapterStatsPanel");
-      if (panel && typeof panel.scrollIntoView === "function") {
-        requestAnimationFrame(function () {
-          panel.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      }
+    var pill = $("duePill");
+    if (pill) pill.innerHTML = "今日待复习 <strong>" + due + "</strong>";
+    var sd = $("statDue");
+    if (sd) sd.textContent = due;
+    var st = $("statToday");
+    if (st) st.textContent = today.reviewed;
+    if ($("reviewStats")) {
+      $("reviewStats").innerHTML =
+        "<span>今日已复习 <b>" + today.reviewed + "</b></span>" +
+        "<span>待复习 <b>" + due + "</b></span>" +
+        "<span>长期记忆 <b>" + mastered + "</b></span>";
     }
   }
 
@@ -315,6 +306,7 @@
   }
 
   function renderLibrary() {
+    if (!$("cardList")) return;
     var list = filteredCards();
     $("listMeta").textContent = "共 " + list.length + " 张卡片 · 点击卡片可查看详情或编辑";
     if (!list.length) {
@@ -437,6 +429,7 @@
   }
 
   function renderStats() {
+    if (!$("statTotal")) return;
     $("statTotal").textContent = state.cards.length;
     $("statDue").textContent = dueCount();
     $("statLearning").textContent = state.cards.filter(function (c) {
@@ -513,108 +506,102 @@
 
   // ---------- 事件绑定 ----------
   function bind() {
-    document.querySelectorAll(".tab").forEach(function (t) {
-      t.addEventListener("click", function () { showView(t.dataset.view); });
-    });
-
-    $("startReviewBtn").addEventListener("click", startReview);
-    $("flipBtn").addEventListener("click", flipCard);
-    $("flashcard").addEventListener("click", flipCard);
-    $("flashcard").addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); flipCard(); }
-    });
-    document.querySelectorAll(".rate-btn").forEach(function (b) {
-      b.addEventListener("click", function () { rateCurrent(b.dataset.rate); });
-    });
-    $("skipBtn").addEventListener("click", skipCurrent);
-    $("endReviewBtn").addEventListener("click", endReview);
-    $("againBtn").addEventListener("click", function () {
-      $("reviewDone").classList.add("hidden");
-      startReview();
-    });
-    $("toLibraryBtn").addEventListener("click", function () {
-      $("reviewDone").classList.add("hidden");
-      $("reviewStart").classList.remove("hidden");
-      showView("library");
-    });
-
-    $("searchInput").addEventListener("input", function (e) {
-      searchTerm = e.target.value.trim();
-      renderLibrary();
-    });
-    document.querySelectorAll("#levelChips .chip").forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        document.querySelectorAll("#levelChips .chip").forEach(function (c) { c.classList.remove("active"); });
-        chip.classList.add("active");
-        libLevel = chip.dataset.level;
-        renderLibrary();
-      });
-    });
-    $("chapterFilter").addEventListener("change", function (e) {
-      libChapter = e.target.value;
-      renderLibrary();
-    });
-
-    $("chapterStats").addEventListener("click", function (e) {
-      var head = e.target.closest(".chapter-stat-head");
-      if (!head) return;
-      var box = head.parentNode;
-      var open = !box.classList.contains("open");
-      box.classList.toggle("open", open);
-      openChapters[box.dataset.index] = open;
-      var all = $("chapterStats").querySelectorAll(".chapter-stat");
-      $("toggleChapterStatsBtn").textContent = $("chapterStats").querySelectorAll(".chapter-stat.open").length === all.length
-        ? "全部收起" : "全部展开";
-    });
-    $("toggleChapterStatsBtn").addEventListener("click", function () {
-      var boxes = $("chapterStats").querySelectorAll(".chapter-stat");
-      var expand = $("chapterStats").querySelectorAll(".chapter-stat.open").length !== boxes.length;
-      boxes.forEach(function (b) {
-        b.classList.toggle("open", expand);
-        openChapters[b.dataset.index] = expand;
-      });
-      $("toggleChapterStatsBtn").textContent = expand ? "全部收起" : "全部展开";
-    });
-    $("cardList").addEventListener("click", function (e) {
-      var card = e.target.closest(".mini-card");
-      if (card) openCardModal(card.dataset.id);
-    });
-    $("addCardBtn").addEventListener("click", function () { openCardModal("new"); });
-    $("saveCardBtn").addEventListener("click", saveCard);
-    $("deleteCardBtn").addEventListener("click", deleteCard);
-
-    $("settingsTopBtn").addEventListener("click", function () { openModal("settingsModal"); });
-    document.querySelectorAll("[data-close]").forEach(function (el) {
-      el.addEventListener("click", function () { closeModal(el.dataset.close); });
-    });
-
-    $("openSettingsBtn").addEventListener("click", function () { openModal("settingsModal"); });
-    $("exportBtn").addEventListener("click", exportBackup);
-    $("importInput").addEventListener("change", function (e) {
+    // 三个页面通用
+    on("settingsTopBtn", "click", function () { openModal("settingsModal"); });
+    onAll("[data-close]", "click", function () { closeModal(this.dataset.close); });
+    on("exportBtn", "click", exportBackup);
+    on("importInput", "change", function (e) {
       if (e.target.files && e.target.files[0]) importBackup(e.target.files[0]);
       e.target.value = "";
     });
-    $("resetProgressBtn").addEventListener("click", function () {
-      if (!window.confirm("确定清空全部记忆进度吗？卡片内容会保留。")) return;
-      state.cards.forEach(function (c) {
-        c.stage = 0;
-        c.dueAt = null;
-        c.reviewCount = 0;
-        c.lastReviewed = null;
+
+    // 复习页
+    if (PAGE === "review") {
+      on("startReviewBtn", "click", startReview);
+      on("flipBtn", "click", flipCard);
+      on("flashcard", "click", flipCard);
+      on("flashcard", "keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); flipCard(); }
       });
-      saveState();
-      refreshChrome();
-      renderStats();
-      renderLibrary();
-      toast("记忆进度已清空");
-    });
+      onAll(".rate-btn", "click", function () { rateCurrent(this.dataset.rate); });
+      on("skipBtn", "click", skipCurrent);
+      on("endReviewBtn", "click", endReview);
+      on("againBtn", "click", function () {
+        $("reviewDone").classList.add("hidden");
+        startReview();
+      });
+    }
+
+    // 卡片库页
+    if (PAGE === "library") {
+      on("searchInput", "input", function (e) {
+        searchTerm = e.target.value.trim();
+        renderLibrary();
+      });
+      onAll("#levelChips .chip", "click", function () {
+        document.querySelectorAll("#levelChips .chip").forEach(function (c) { c.classList.remove("active"); });
+        this.classList.add("active");
+        libLevel = this.dataset.level;
+        renderLibrary();
+      });
+      on("chapterFilter", "change", function (e) {
+        libChapter = e.target.value;
+        renderLibrary();
+      });
+      on("cardList", "click", function (e) {
+        var card = e.target.closest(".mini-card");
+        if (card) openCardModal(card.dataset.id);
+      });
+      on("addCardBtn", "click", function () { openCardModal("new"); });
+      on("saveCardBtn", "click", saveCard);
+      on("deleteCardBtn", "click", deleteCard);
+    }
+
+    // 统计页
+    if (PAGE === "stats") {
+      on("chapterStats", "click", function (e) {
+        var head = e.target.closest(".chapter-stat-head");
+        if (!head) return;
+        var box = head.parentNode;
+        var open = !box.classList.contains("open");
+        box.classList.toggle("open", open);
+        openChapters[box.dataset.index] = open;
+        var all = $("chapterStats").querySelectorAll(".chapter-stat");
+        $("toggleChapterStatsBtn").textContent = $("chapterStats").querySelectorAll(".chapter-stat.open").length === all.length
+          ? "全部收起" : "全部展开";
+      });
+      on("toggleChapterStatsBtn", "click", function () {
+        var boxes = $("chapterStats").querySelectorAll(".chapter-stat");
+        var expand = $("chapterStats").querySelectorAll(".chapter-stat.open").length !== boxes.length;
+        boxes.forEach(function (b) {
+          b.classList.toggle("open", expand);
+          openChapters[b.dataset.index] = expand;
+        });
+        $("toggleChapterStatsBtn").textContent = expand ? "全部收起" : "全部展开";
+      });
+      on("openSettingsBtn", "click", function () { openModal("settingsModal"); });
+      on("resetProgressBtn", "click", function () {
+        if (!window.confirm("确定清空全部记忆进度吗？卡片内容会保留。")) return;
+        state.cards.forEach(function (c) {
+          c.stage = 0;
+          c.dueAt = null;
+          c.reviewCount = 0;
+          c.lastReviewed = null;
+        });
+        saveState();
+        refreshChrome();
+        renderStats();
+        renderLibrary();
+        toast("记忆进度已清空");
+      });
+    }
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
         ["editModal", "settingsModal"].forEach(closeModal);
         return;
       }
-      if (!session || $("reviewSession").classList.contains("hidden")) return;
+      if (PAGE !== "review" || !session || $("reviewSession").classList.contains("hidden")) return;
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
       if (e.code === "Space") {
         e.preventDefault();
@@ -628,6 +615,12 @@
   bind();
   populateScopeChapters();
   refreshChrome();
-  renderLibrary();
-  renderStats();
+  if (PAGE === "library") renderLibrary();
+  if (PAGE === "stats") {
+    renderStats();
+    var panel = $("chapterStatsPanel");
+    if (panel && typeof panel.scrollIntoView === "function") {
+      requestAnimationFrame(function () { panel.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    }
+  }
 })();

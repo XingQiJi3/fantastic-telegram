@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>方剂速记 · 卡片库</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="library">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">方</div>
+        <div class="brand-text">
+          <h1>方剂速记</h1>
+          <p>72 学时末考 · 艾宾浩斯记忆卡</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="due-pill" id="duePill">今日待复习 <strong>0</strong></div>
+        <button class="owner-btn" id="settingsTopBtn" type="button" title="备份与导入">设置</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="主导航">
+      <a class="tab" href="index.html">复习</a>
+      <a class="tab active" href="library.html">卡片库</a>
+      <a class="tab" href="stats.html">学习统计</a>
+    </nav>
+
+    <main>
+      <section class="view active" id="view-library">
+        <div class="library-toolbar">
+          <div class="search-box">
+            <span class="search-mark">搜</span>
+            <input type="search" id="searchInput" placeholder="搜索方名或方歌，如：桂枝汤">
+          </div>
+          <div class="chip-group" id="levelChips">
+            <button class="chip active" type="button" data-level="all">全部</button>
+            <button class="chip" type="button" data-level="掌握">掌握</button>
+            <button class="chip" type="button" data-level="熟悉">熟悉</button>
+            <button class="chip" type="button" data-level="了解">了解</button>
+          </div>
+          <select id="chapterFilter" class="chapter-filter"><option value="all">全部章节</option></select>
+          <button class="primary-btn" id="addCardBtn" type="button">新增卡片</button>
+        </div>
+        <div class="list-meta" id="listMeta"></div>
+        <div class="card-grid" id="cardList"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="editModal">
+    <div class="modal-backdrop" data-close="editModal"></div>
+    <div class="modal-card wide">
+      <h3 id="editTitle">编辑卡片</h3>
+      <div class="form-grid">
+        <label>方名<input type="text" id="editName" maxlength="30"></label>
+        <label>考核要求<select id="editLevel"><option>掌握</option><option>熟悉</option><option>了解</option></select></label>
+        <label class="full">章节<input type="text" id="editChapter" maxlength="40"></label>
+        <label class="full">方歌<textarea id="editSong" rows="4" maxlength="300"></textarea></label>
+        <label class="full">备注（可选）<textarea id="editNote" rows="2" maxlength="300"></textarea></label>
+      </div>
+      <div class="modal-actions between">
+        <button class="danger-btn hidden" id="deleteCardBtn" type="button">删除卡片</button>
+        <div class="right-actions">
+          <button class="secondary-btn" type="button" data-close="editModal">取消</button>
+          <button class="primary-btn" id="saveCardBtn" type="button">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-backdrop" data-close="settingsModal"></div>
+    <div class="modal-card wide">
+      <h3>备份与导入</h3>
+      <div class="settings-block">
+        <h4>备份卡片与进度</h4>
+        <p class="muted">导出为 JSON 文件，可在其他设备导入恢复。</p>
+        <div class="inline-actions">
+          <button class="secondary-btn" id="exportBtn" type="button">导出备份</button>
+          <label class="file-btn">导入备份<input type="file" id="importInput" accept="application/json,.json"></label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="primary-btn" type="button" data-close="settingsModal">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="seed.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
