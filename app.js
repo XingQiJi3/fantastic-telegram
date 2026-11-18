@@ -47,6 +47,19 @@
     if (stage >= INTERVALS.length) return "长期记忆";
     return INTERVALS[stage - 1].label;
   }
+  function todayKey() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function ensureStats() {
+    if (!state.daily) state.daily = {};
+    var key = todayKey();
+    if (!state.daily[key]) state.daily[key] = { reviewed: 0, forget: 0, remember: 0, easy: 0 };
+    Object.keys(state.daily).forEach(function (k) {
+      if (k < key && (Date.now() - new Date(k + "T00:00:00").getTime()) / DAY > 30) delete state.daily[k];
+    });
+    return state.daily[key];
+  }
 
   // ---------- 状态 ----------
   var state = loadState();
@@ -56,6 +69,7 @@
   var searchTerm = "";
   var editingId = null;
   var isNewCard = false;
+  var openChapters = {};
 
   function seedCards() {
     return (window.SEED_CARDS || []).map(function (c, i) {
@@ -82,7 +96,7 @@
       try { saved = JSON.parse(raw); } catch (e) { saved = null; }
     }
     if (!saved || !Array.isArray(saved.cards)) {
-      return { cards: seedCards(), seedVersion: SEED_VERSION, updatedAt: Date.now() };
+      return { cards: seedCards(), seedVersion: SEED_VERSION, daily: {}, updatedAt: Date.now() };
     }
     var seeds = seedCards();
     var seedByName = {};
@@ -120,8 +134,16 @@
     return state.cards.filter(isDue).length;
   }
   function refreshChrome() {
-    $("duePill").innerHTML = "今日待复习 <strong>" + dueCount() + "</strong>";
-    $("statDue").textContent = dueCount();
+    var due = dueCount();
+    var today = ensureStats();
+    var mastered = state.cards.filter(function (c) { return c.stage >= 8; }).length;
+    $("duePill").innerHTML = "今日待复习 <strong>" + due + "</strong>";
+    $("statDue").textContent = due;
+    $("statToday").textContent = today.reviewed;
+    $("reviewStats").innerHTML =
+      "<span>今日已复习 <b>" + today.reviewed + "</b></span>" +
+      "<span>待复习 <b>" + due + "</b></span>" +
+      "<span>长期记忆 <b>" + mastered + "</b></span>";
   }
 
   function showView(name) {
@@ -132,7 +154,15 @@
       v.classList.toggle("active", v.id === "view-" + name);
     });
     if (name === "library") renderLibrary();
-    if (name === "stats") renderStats();
+    if (name === "stats") {
+      renderStats();
+      var panel = $("chapterStatsPanel");
+      if (panel && typeof panel.scrollIntoView === "function") {
+        requestAnimationFrame(function () {
+          panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    }
   }
 
   function openModal(id) { $(id).classList.remove("hidden"); }
@@ -189,7 +219,7 @@
     var lv = $("frontLevel");
     lv.textContent = card.level;
     lv.className = "level-badge level-" + card.level;
-    $("backSong").textContent = card.song || "（暂无方歌，可在所有者模式下补充）";
+    $("backSong").textContent = card.song || "（暂无方歌，可在卡片库中编辑补充）";
     $("backChapter").textContent = card.name;
     $("backStage").textContent = "当前节点：" + stageLabel(card.stage);
     $("flipBtn").classList.remove("hidden");
@@ -198,7 +228,13 @@
   }
 
   function flipCard() {
-    if (!session || session.flipped) return;
+    if (!session) return;
+    if (session.flipped) {
+      session.flipped = false;
+      $("flashcard").classList.remove("flipped");
+      $("flipBtn").classList.remove("hidden");
+      return;
+    }
     session.flipped = true;
     $("flashcard").classList.add("flipped");
     $("flipBtn").classList.add("hidden");
@@ -223,6 +259,9 @@
     }
     card.reviewCount = (card.reviewCount || 0) + 1;
     card.lastReviewed = Date.now();
+    var day = ensureStats();
+    day.reviewed++;
+    day[rate]++;
     saveState();
     session.index++;
     showCurrent();
@@ -351,6 +390,52 @@
   }
 
   // ---------- 统计 ----------
+  function fmtTime(ts) {
+    var d = new Date(ts);
+    return String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0") + " " +
+      String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function renderChapterStats() {
+    var groups = [];
+    var byName = {};
+    state.cards.forEach(function (c) {
+      var key = c.chapter || "自定义";
+      if (!byName[key]) { byName[key] = { name: key, cards: [] }; groups.push(byName[key]); }
+      byName[key].cards.push(c);
+    });
+    $("chapterStats").innerHTML = groups.map(function (g, i) {
+      var total = g.cards.length;
+      var fresh = g.cards.filter(function (c) { return !c.stage; }).length;
+      var learning = g.cards.filter(function (c) { return c.stage > 0 && c.stage < 8; }).length;
+      var mastered = total - fresh - learning;
+      var due = g.cards.filter(isDue).length;
+      var pct = function (n) { return total ? (n / total * 100).toFixed(1) + "%" : "0%"; };
+      var rows = g.cards.slice().sort(function (a, b) {
+        return (b.stage || 0) - (a.stage || 0);
+      }).map(function (c) {
+        var timing = !c.stage ? "未开始" : isDue(c) ? "待复习" : "下次 " + fmtTime(c.dueAt);
+        return '<div class="formula-row"><span class="fname">' + esc(c.name) + "</span>" +
+          '<span class="tag">' + esc(c.level) + "</span>" +
+          '<span class="tag">' + esc(stageLabel(c.stage)) + "</span>" +
+          '<span class="tag">' + (c.reviewCount || 0) + " 次 · " + timing + "</span></div>";
+      }).join("");
+      var open = openChapters[i] ? " open" : "";
+      return '<div class="chapter-stat' + open + '" data-index="' + i + '">' +
+        '<div class="chapter-stat-head"><span class="chev">›</span>' +
+        '<div class="chapter-stat-main"><div class="chapter-stat-title">' + esc(g.name) + "</div>" +
+        '<div class="chapter-stat-meta">未开始 ' + fresh + " · 学习中 " + learning + " · 长期记忆 " + mastered +
+        " · 待复习 " + due + "</div>" +
+        '<div class="chapter-stack"><span class="s-new" style="width:' + pct(fresh) + '"></span>' +
+        '<span class="s-learning" style="width:' + pct(learning) + '"></span>' +
+        '<span class="s-mastered" style="width:' + pct(mastered) + '"></span></div></div>' +
+        '<span class="chapter-stat-count">' + total + " 首</span></div>" +
+        '<div class="chapter-detail">' + rows + "</div></div>";
+    }).join("");
+    var allOpen = groups.length > 0 && groups.every(function (_, i) { return openChapters[i]; });
+    $("toggleChapterStatsBtn").textContent = allOpen ? "全部收起" : "全部展开";
+  }
+
   function renderStats() {
     $("statTotal").textContent = state.cards.length;
     $("statDue").textContent = dueCount();
@@ -366,9 +451,27 @@
         '" style="width:' + pct + '%"></div></div><span>' + n + " 张</span></div>";
     }).join("");
 
+    var days = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      days.push({ key: key, n: state.daily && state.daily[key] ? state.daily[key].reviewed : 0 });
+    }
+    var max = Math.max.apply(null, days.map(function (x) { return x.n; }).concat([1]));
+    $("dailyBars").innerHTML = days.map(function (x, idx) {
+      var h = Math.max(4, Math.round(x.n / max * 90));
+      return '<div class="daily-col' + (idx === 6 ? " today" : "") + '">' +
+        '<span class="daily-num">' + x.n + "</span>" +
+        '<div class="daily-bar" style="height:' + h + 'px"></div>' +
+        "<span>" + x.key.slice(5).replace("-", "/") + "</span></div>";
+    }).join("");
+
     $("intervalList").innerHTML = INTERVALS.map(function (it, i) {
       return '<span class="interval-item"><b>第 ' + (i + 1) + ' 次</b>' + it.label + "</span>";
     }).join("") + '<span class="interval-item"><b>起点</b>新卡片 / 忘记后 5 分钟</span>';
+
+    renderChapterStats();
   }
 
   // ---------- 数据管理 ----------
@@ -450,6 +553,27 @@
     $("chapterFilter").addEventListener("change", function (e) {
       libChapter = e.target.value;
       renderLibrary();
+    });
+
+    $("chapterStats").addEventListener("click", function (e) {
+      var head = e.target.closest(".chapter-stat-head");
+      if (!head) return;
+      var box = head.parentNode;
+      var open = !box.classList.contains("open");
+      box.classList.toggle("open", open);
+      openChapters[box.dataset.index] = open;
+      var all = $("chapterStats").querySelectorAll(".chapter-stat");
+      $("toggleChapterStatsBtn").textContent = $("chapterStats").querySelectorAll(".chapter-stat.open").length === all.length
+        ? "全部收起" : "全部展开";
+    });
+    $("toggleChapterStatsBtn").addEventListener("click", function () {
+      var boxes = $("chapterStats").querySelectorAll(".chapter-stat");
+      var expand = $("chapterStats").querySelectorAll(".chapter-stat.open").length !== boxes.length;
+      boxes.forEach(function (b) {
+        b.classList.toggle("open", expand);
+        openChapters[b.dataset.index] = expand;
+      });
+      $("toggleChapterStatsBtn").textContent = expand ? "全部收起" : "全部展开";
     });
     $("cardList").addEventListener("click", function (e) {
       var card = e.target.closest(".mini-card");

@@ -113,6 +113,12 @@ button { cursor: pointer; }
 .review-setup .primary-btn { grid-column: 1 / -1; margin-top: 6px; }
 
 /* 复习会话 */
+.review-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.review-stats span {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 13px; font-size: 12px; color: var(--ink-soft);
+}
+.review-stats b { color: var(--accent); font-weight: 700; }
 .session-bar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
 .session-progress { flex: 1; height: 6px; border-radius: 99px; background: #e7e1d6; overflow: hidden; }
 .session-progress div { height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
@@ -158,6 +164,7 @@ button { cursor: pointer; }
 .face.back .rate-btn { min-width: 108px; padding: 9px 14px; font-size: 14px; }
 
 .review-controls { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 26px; }
+.flip-hint { font-size: 12px; color: var(--ink-faint); }
 .rate-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 .rate-btn {
   border-radius: 12px; border: 1px solid var(--line); background: #fff;
@@ -229,12 +236,43 @@ button { cursor: pointer; }
 .bar-fill.掌握 { background: var(--master); }
 .bar-fill.熟悉 { background: var(--familiar); }
 .bar-fill.了解 { background: var(--know); }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.panel-head h3 { margin: 0; }
+.chapter-stats { display: flex; flex-direction: column; gap: 10px; }
+.chapter-stat { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+.chapter-stat-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; user-select: none; }
+.chapter-stat-head:hover { background: rgba(0, 0, 0, .025); }
+.chapter-stat-main { flex: 1; min-width: 0; }
+.chapter-stat-title { font-family: var(--serif); font-size: 15px; }
+.chapter-stat-meta { font-size: 12px; color: var(--ink-soft); margin-top: 5px; }
+.chapter-stat-count { font-size: 12px; color: var(--ink-faint); white-space: nowrap; }
+.chev { display: inline-block; color: var(--ink-faint); font-size: 18px; line-height: 1; transition: transform .2s; }
+.chapter-stat.open .chev { transform: rotate(90deg); }
+.chapter-stack { display: flex; height: 8px; border-radius: 99px; overflow: hidden; margin-top: 8px; background: #eee9de; }
+.chapter-stack span { display: block; height: 100%; }
+.chapter-stack .s-new { background: #cfc9bc; }
+.chapter-stack .s-learning { background: var(--familiar); }
+.chapter-stack .s-mastered { background: var(--master); }
+.chapter-detail { display: none; border-top: 1px solid var(--line); padding: 6px 14px 12px; }
+.chapter-stat.open .chapter-detail { display: block; }
+.formula-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+.formula-row:last-child { border-bottom: 0; }
+.formula-row .fname { flex: 1 1 130px; font-family: var(--serif); }
+.formula-row .tag { font-size: 11px; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; }
 .interval-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .interval-item {
   border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
   padding: 8px 13px; font-size: 13px; color: var(--ink-soft);
 }
 .interval-item b { color: var(--accent); font-weight: 700; margin-right: 6px; }
+.daily-bars { display: flex; align-items: flex-end; gap: 10px; height: 130px; }
+.daily-col {
+  flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
+  align-items: center; gap: 4px; font-size: 11px; color: var(--ink-faint);
+}
+.daily-bar { width: 100%; max-width: 38px; min-height: 4px; background: var(--accent); border-radius: 6px 6px 0 0; }
+.daily-col.today .daily-bar { background: var(--gold); }
+.daily-num { color: var(--accent); font-weight: 700; }
 .danger-zone { border-color: #edd9d5; }
 .danger-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 

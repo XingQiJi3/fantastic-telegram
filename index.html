@@ -31,6 +31,7 @@
     <main>
       <!-- 复习 -->
       <section class="view active" id="view-review">
+        <div class="review-stats" id="reviewStats"></div>
         <div class="panel intro-panel" id="reviewStart">
           <div class="intro-copy">
             <span class="eyebrow">SPACED REPETITION</span>
@@ -94,6 +95,7 @@
           <div class="review-controls">
             <button class="secondary-btn" id="flipBtn" type="button">显示方歌</button>
             <button class="text-btn" id="skipBtn" type="button">稍后再看</button>
+            <div class="flip-hint">点击卡片翻面 · 再点一次返回正面</div>
           </div>
         </div>
 
@@ -135,11 +137,26 @@
           <div class="stat-card"><span class="stat-label">今日待复习</span><strong id="statDue">0</strong><small>到复习节点</small></div>
           <div class="stat-card"><span class="stat-label">记忆中</span><strong id="statLearning">0</strong><small>已进入复习周期</small></div>
           <div class="stat-card"><span class="stat-label">长期记忆</span><strong id="statMastered">0</strong><small>达到 15 天节点</small></div>
+          <div class="stat-card"><span class="stat-label">今日已复习</span><strong id="statToday">0</strong><small>记得 / 太简单 / 不记得</small></div>
         </div>
 
         <div class="panel stats-panel">
           <h3>按考核要求分布</h3>
           <div id="levelBars" class="level-bars"></div>
+        </div>
+
+        <div class="panel stats-panel" id="chapterStatsPanel">
+          <div class="panel-head">
+            <h3>各章节方剂学习情况</h3>
+            <button class="text-btn" id="toggleChapterStatsBtn" type="button">全部展开</button>
+          </div>
+          <p class="muted">按章节查看每首方剂的学习阶段，点击章节可展开明细。</p>
+          <div id="chapterStats" class="chapter-stats"></div>
+        </div>
+
+        <div class="panel stats-panel">
+          <h3>最近 7 天复习</h3>
+          <div id="dailyBars" class="daily-bars"></div>
         </div>
 
         <div class="panel stats-panel">
