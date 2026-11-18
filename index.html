@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>方剂速记 · 艾宾浩斯记忆卡</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">方</div>
+        <div class="brand-text">
+          <h1>方剂速记</h1>
+          <p>72 学时末考 · 艾宾浩斯记忆卡</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="due-pill" id="duePill">今日待复习 <strong>0</strong></div>
+        <button class="owner-btn" id="settingsTopBtn" type="button" title="备份与导入">设置</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="主导航">
+      <button class="tab active" type="button" data-view="review">复习</button>
+      <button class="tab" type="button" data-view="library">卡片库</button>
+      <button class="tab" type="button" data-view="stats">学习统计</button>
+    </nav>
+
+    <main>
+      <!-- 复习 -->
+      <section class="view active" id="view-review">
+        <div class="panel intro-panel" id="reviewStart">
+          <div class="intro-copy">
+            <span class="eyebrow">SPACED REPETITION</span>
+            <h2>按遗忘曲线，把方歌记牢</h2>
+            <p>正面是方名与考核要求，背面是方歌。回忆后再翻面，按记忆效果选择下一复习节点。</p>
+          </div>
+          <div class="review-setup">
+            <label class="field-label" for="reviewScope">复习范围</label>
+            <select id="reviewScope">
+              <option value="all">全部方剂</option>
+              <option value="掌握">仅掌握</option>
+              <option value="熟悉">仅熟悉</option>
+              <option value="了解">仅了解</option>
+              <option value="due">仅到期待复习</option>
+              <optgroup label="按章节" id="scopeChapters"></optgroup>
+            </select>
+            <label class="field-label" for="reviewLimit">本轮数量</label>
+            <select id="reviewLimit">
+              <option value="10">10 张</option>
+              <option value="20" selected>20 张</option>
+              <option value="40">40 张</option>
+              <option value="999">全部</option>
+            </select>
+            <button class="primary-btn" id="startReviewBtn" type="button">开始复习</button>
+          </div>
+        </div>
+
+        <div class="review-session hidden" id="reviewSession">
+          <div class="session-bar">
+            <div class="session-progress"><div id="sessionProgressBar"></div></div>
+            <span id="sessionCounter">0 / 0</span>
+            <button class="text-btn" id="endReviewBtn" type="button">结束本轮</button>
+          </div>
+
+          <div class="flashcard-wrap">
+            <div class="flashcard" id="flashcard" role="button" tabindex="0" aria-label="点击翻转卡片">
+              <div class="face front">
+                <div class="face-top">
+                  <span class="chapter-tag" id="frontChapter"></span>
+                  <span class="level-badge" id="frontLevel"></span>
+                </div>
+                <div class="formula-name" id="frontName"></div>
+                <div class="face-hint">考核要求 · 回忆方歌后点击翻面</div>
+              </div>
+              <div class="face back">
+                <div class="face-top">
+                  <span class="chapter-tag" id="backChapter"></span>
+                  <span class="stage-tag" id="backStage"></span>
+                </div>
+                <div class="song-text" id="backSong"></div>
+                <div class="back-question">刚才记住了吗？</div>
+                <div class="rate-row" id="rateRow">
+                  <button class="rate-btn forget" type="button" data-rate="forget">不记得<small>5 分钟后</small></button>
+                  <button class="rate-btn remember" type="button" data-rate="remember">记得<small>进入下一节点</small></button>
+                  <button class="rate-btn easy" type="button" data-rate="easy">太简单<small>跳两级</small></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="review-controls">
+            <button class="secondary-btn" id="flipBtn" type="button">显示方歌</button>
+            <button class="text-btn" id="skipBtn" type="button">稍后再看</button>
+          </div>
+        </div>
+
+        <div class="panel done-panel hidden" id="reviewDone">
+          <div class="done-icon">成</div>
+          <h2>本轮复习完成</h2>
+          <p id="doneSummary"></p>
+          <div class="done-actions">
+            <button class="primary-btn" id="againBtn" type="button">再来一轮</button>
+            <button class="secondary-btn" id="toLibraryBtn" type="button">查看卡片库</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 卡片库 -->
+      <section class="view" id="view-library">
+        <div class="library-toolbar">
+          <div class="search-box">
+            <span class="search-mark">搜</span>
+            <input type="search" id="searchInput" placeholder="搜索方名或方歌，如：桂枝汤">
+          </div>
+          <div class="chip-group" id="levelChips">
+            <button class="chip active" type="button" data-level="all">全部</button>
+            <button class="chip" type="button" data-level="掌握">掌握</button>
+            <button class="chip" type="button" data-level="熟悉">熟悉</button>
+            <button class="chip" type="button" data-level="了解">了解</button>
+          </div>
+          <select id="chapterFilter" class="chapter-filter"><option value="all">全部章节</option></select>
+          <button class="primary-btn" id="addCardBtn" type="button">新增卡片</button>
+        </div>
+        <div class="list-meta" id="listMeta"></div>
+        <div class="card-grid" id="cardList"></div>
+      </section>
+
+      <!-- 统计 -->
+      <section class="view" id="view-stats">
+        <div class="stat-grid">
+          <div class="stat-card"><span class="stat-label">卡片总数</span><strong id="statTotal">0</strong><small>仅第一份文件的背诵方剂</small></div>
+          <div class="stat-card"><span class="stat-label">今日待复习</span><strong id="statDue">0</strong><small>到复习节点</small></div>
+          <div class="stat-card"><span class="stat-label">记忆中</span><strong id="statLearning">0</strong><small>已进入复习周期</small></div>
+          <div class="stat-card"><span class="stat-label">长期记忆</span><strong id="statMastered">0</strong><small>达到 15 天节点</small></div>
+        </div>
+
+        <div class="panel stats-panel">
+          <h3>按考核要求分布</h3>
+          <div id="levelBars" class="level-bars"></div>
+        </div>
+
+        <div class="panel stats-panel">
+          <h3>艾宾浩斯复习节点</h3>
+          <p class="muted">每次选择「记得」进入下一节点；「忘记」回到起点，5 分钟后重来；「太简单」直接跳两级。</p>
+          <div id="intervalList" class="interval-list"></div>
+        </div>
+
+        <div class="panel danger-zone">
+          <h3>数据管理</h3>
+          <div class="danger-actions">
+            <button class="secondary-btn" id="openSettingsBtn" type="button">备份 / 导入</button>
+            <button class="danger-btn" id="resetProgressBtn" type="button">清空记忆进度</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 编辑卡片 -->
+  <div class="modal hidden" id="editModal">
+    <div class="modal-backdrop" data-close="editModal"></div>
+    <div class="modal-card wide">
+      <h3 id="editTitle">编辑卡片</h3>
+      <div class="form-grid">
+        <label>方名<input type="text" id="editName" maxlength="30"></label>
+        <label>考核要求<select id="editLevel"><option>掌握</option><option>熟悉</option><option>了解</option></select></label>
+        <label class="full">章节<input type="text" id="editChapter" maxlength="40"></label>
+        <label class="full">方歌<textarea id="editSong" rows="4" maxlength="300"></textarea></label>
+        <label class="full">备注（可选）<textarea id="editNote" rows="2" maxlength="300"></textarea></label>
+      </div>
+      <div class="modal-actions between">
+        <button class="danger-btn hidden" id="deleteCardBtn" type="button">删除卡片</button>
+        <div class="right-actions">
+          <button class="secondary-btn" type="button" data-close="editModal">取消</button>
+          <button class="primary-btn" id="saveCardBtn" type="button">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 所有者设置 -->
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-backdrop" data-close="settingsModal"></div>
+    <div class="modal-card wide">
+      <h3>备份与导入</h3>
+      <div class="settings-block">
+        <h4>备份卡片与进度</h4>
+        <p class="muted">导出为 JSON 文件，可在其他设备导入恢复。</p>
+        <div class="inline-actions">
+          <button class="secondary-btn" id="exportBtn" type="button">导出备份</button>
+          <label class="file-btn">导入备份<input type="file" id="importInput" accept="application/json,.json"></label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="primary-btn" type="button" data-close="settingsModal">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="seed.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
